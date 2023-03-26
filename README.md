@@ -50,7 +50,8 @@ I am not responsible for any harm caused with this project. Please use this API 
 - Make Return values more readable
 - Documentation
 
-Please Contribute if you can
+Please Contribute if you can.  
+When project is finished, a pip package will be created
 
 ## Contributing
 
