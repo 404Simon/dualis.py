@@ -7,7 +7,6 @@ Author: pvhil
 """
 import re
 
-
 import requests
 from bs4 import BeautifulSoup
 
@@ -173,6 +172,8 @@ class Dualis(object):
 
     @DeprecationWarning
     def getTimeTableMonth(self,date=None):
+        """Deprecated, parsing not tested, wont work"""
+
         """Get the timetable from a student
         Arguments:
             date -- date as a string (DD/MM/YYYY)
@@ -203,5 +204,6 @@ class Dualis(object):
             for td in tr.find_all('td'):
                 temp[len(temp)] = re.sub(" +"," ",td.get_text().replace("\r", "").replace("\t", "").replace("\n", "").replace("\xa0"," "))
             data[len(data)] = temp
+
         return data
 
