@@ -42,6 +42,15 @@ This module was created with good intentions behind it, for example:
 Please do not abuse this project to harm to original website in any way.  
 I am not responsible for any harm caused with this project. Please use this API wrapper with caution and do not spam request the Dualis Server.
 
+## Todo
+
+- Implement more Endpoints
+- Better, more precise Parsing
+- Make Return values more readable
+- Documentation
+
+Please Contribute if you can
+
 ## Contributing
 
 I can not parse information from the website completely, because i do not have full access to timetables and other information.  

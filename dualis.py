@@ -171,7 +171,7 @@ class Dualis(object):
             data[len(data)] = temp
         return data
 
-
+    @DeprecationWarning
     def getTimeTableMonth(self,date=None):
         """Get the timetable from a student
         Arguments:
