@@ -1,13 +1,18 @@
-import requests
-import copy
-from bs4 import BeautifulSoup
+#!/usr/bin/env python # [1]
+"""\
+Dualis API Wrapper
+
+Usage: import dualis and initialize with dualis.Dualis()
+Author: pvhil
+"""
 import re
 
 
+import requests
+from bs4 import BeautifulSoup
+
 class Dualis(object):
     """API Wrapper for the Dualis Website"""
-
-    HTTP_METHODS = ['get', 'options', 'head', 'post', 'put', 'patch', 'delete']
 
     def __init__(self, username=None, password=None):
         """Constructor
@@ -32,13 +37,12 @@ class Dualis(object):
         loginRequest = self.session.post("https://dualis.dhbw.de/scripts/mgrqispi.dll", data=
             f"usrname={self.username}&pass={self.password}&APPNAME=CampusNet&PRGNAME=LOGINCHECK&ARGUMENTS=clino%2Cusrname%2Cpass%2Cmenuno%2Cmenu_type%2Cbrowser%2Cplatform&clino=000000000000001&menuno=000324&menu_type=classic&browser=&platform="
         )
-        if loginRequest.status_code != 200:
+        if loginRequest.status_code != 200 or loginRequest.headers["REFRESH"].split("ARGUMENTS=")[1].split(",")[0] == "":
             raise Exception("Login failed")
         else:
             print("Login successful")
 
         self.arguments = loginRequest.headers["REFRESH"].split("ARGUMENTS=")[1].split(",")[0]
-        print(self.arguments)
 
     def getTodayEvents(self):
         """Get all events for today"""
@@ -106,9 +110,15 @@ class Dualis(object):
         return data
 
 
-    def getTimeTable(self):
-        """Get the timetable from a student"""
-        a = self.session.get(f"https://dualis.dhbw.de/scripts/mgrqispi.dll?APPNAME=CampusNet&PRGNAME=SCHEDULER&ARGUMENTS={self.arguments},-N000028,-A,-A,-N0")  
+    def getTimeTableDay(self,date=None):
+        """Get the timetable from a student
+        Arguments:
+            date -- date as a string (DD.MM.YYYY)
+        """
+        if date==None:
+            a = self.session.get(f"https://dualis.dhbw.de/scripts/mgrqispi.dll?APPNAME=CampusNet&PRGNAME=SCHEDULER&ARGUMENTS={self.arguments},-N000028,-A,-A,-N0")  
+        else:
+            a = self.session.get(f"https://dualis.dhbw.de/scripts/mgrqispi.dll?APPNAME=CampusNet&PRGNAME=SCHEDULER&ARGUMENTS={self.arguments},-N000028,-A{date},-AN,-A,-N0")
         if a.status_code != 200:
             raise Exception("Request failed")
 
@@ -116,13 +126,82 @@ class Dualis(object):
         # TODO Selection day,week,month
         
         soup = BeautifulSoup(a.text, 'html.parser')
-        table = soup.find("table", {"class": "nb list students_results"})
+        table = soup.find("div", {"id": "scheduler"}).find("table",{ "class": "nb"})
         data = {}
-        tbody = table.find('tbody')
-        for tr in tbody.find_all('tr'):
+        #tbody = table.find('tbody')
+        for tr in table.find_all('tr'):
             temp = {}
+            for th in tr.find_all('th'):
+                temp["time"] = re.sub(" +"," ",th.get_text().replace("\r", "").replace("\t", "").replace("\n", "").replace("\xa0"," "))
             for td in tr.find_all('td'):
-                if not td.get_text().replace("\r", "").replace("\t", "").replace("\n", "").replace(" ", "").replace("\xa0"," ") == "" and not td.get_text().replace("\r", "").replace("\t", "").replace("\n", "").replace(" ", "").replace("\xa0"," ") == " ":
-                    temp[len(temp)] = re.sub(" +"," ",td.get_text().replace("\r", "").replace("\t", "").replace("\n", "").replace("\xa0"," "))
+                temp["data"] = re.sub(" +"," ",td.get_text().replace("\r", "").replace("\t", "").replace("\n", "").replace("\xa0"," "))
             data[len(data)] = temp
         return data
+
+    def getTimeTableWeek(self,date=None):
+        """Get the timetable from a student
+        Arguments:
+            date -- date as a string (DD/MM/YYYY)
+        """
+        if date==None:
+            a = self.session.get(f"https://dualis.dhbw.de/scripts/mgrqispi.dll?APPNAME=CampusNet&PRGNAME=SCHEDULER&ARGUMENTS={self.arguments},-N000030,-A,-A,-N1")  
+        else:
+            a = self.session.get(f"https://dualis.dhbw.de/scripts/mgrqispi.dll?APPNAME=CampusNet&PRGNAME=SCHEDULER&ARGUMENTS={self.arguments},-N000030,-{date},-A,-N1,-N0,-N0")
+        if a.status_code != 200:
+            raise Exception("Request failed")
+
+        # TODO parse the data more efficiently
+        # TODO Selection day,week,month
+        
+        soup = BeautifulSoup(a.text, 'html.parser')
+        table = soup.find("div", {"id": "weekTableRoomplan"}).find("table",{ "class": "nb"})
+        data = {}
+        #tbody = table.find('tbody')
+        for tr in table.find_all('tr'):
+            # skip if tr has tbsubhead as class
+            if tr.get("class") == ["tbsubhead"]:
+                continue
+            if tr.find_all("td")[0].get("class") == ["tbcontrol"]:
+                continue
+            temp = {}
+            for th in tr.find_all('th'):                
+                temp[len(temp)] = re.sub(" +"," ",th.get_text().replace("\r", "").replace("\t", "").replace("\n", "").replace("\xa0"," "))
+            for td in tr.find_all('td'):
+                temp[len(temp)] = re.sub(" +"," ",td.get_text().replace("\r", "").replace("\t", "").replace("\n", "").replace("\xa0"," "))
+            data[len(data)] = temp
+        return data
+
+
+    def getTimeTableMonth(self,date=None):
+        """Get the timetable from a student
+        Arguments:
+            date -- date as a string (DD/MM/YYYY)
+        """
+        if date==None:
+            a = self.session.get(f"https://dualis.dhbw.de/scripts/mgrqispi.dll?APPNAME=CampusNet&PRGNAME=SCHEDULER&ARGUMENTS={self.arguments},-N000030,-A,-A,-N1")  
+        else:
+            a = self.session.get(f"https://dualis.dhbw.de/scripts/mgrqispi.dll?APPNAME=CampusNet&PRGNAME=SCHEDULER&ARGUMENTS={self.arguments},-N000030,-{date},-A,-N1,-N0,-N0")
+        if a.status_code != 200:
+            raise Exception("Request failed")
+
+        # TODO parse the data more efficiently
+        # TODO No Example for testing, parsing will not work. Need help
+        
+        soup = BeautifulSoup(a.text, 'html.parser')
+        table = soup.find("div", {"id": "tb tbMonthContainer"}).find("table",{ "class": "nb"})
+        data = {}
+        #tbody = table.find('tbody')
+        for tr in table.find_all('tr'):
+            # skip if tr has tbsubhead as class
+            if tr.get("class") == ["tbsubhead"]:
+                continue
+            if tr.find_all("td")[0].get("class") == ["tbcontrol"]:
+                continue
+            temp = {}
+            for th in tr.find_all('th'):                
+                temp[len(temp)] = re.sub(" +"," ",th.get_text().replace("\r", "").replace("\t", "").replace("\n", "").replace("\xa0"," "))
+            for td in tr.find_all('td'):
+                temp[len(temp)] = re.sub(" +"," ",td.get_text().replace("\r", "").replace("\t", "").replace("\n", "").replace("\xa0"," "))
+            data[len(data)] = temp
+        return data
+
