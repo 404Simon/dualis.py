@@ -11,3 +11,4 @@ class Appointment:
     teacher: str
     def __repr__(self):
         return f'{self.date.strftime("%d.%m.%Y")} ({self.start_time.strftime("%H:%M")} - {self.end_time.strftime("%H:%M")}) - {self.subject} - {self.room} - {self.teacher}'
+    
