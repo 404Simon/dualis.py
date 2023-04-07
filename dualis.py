@@ -172,8 +172,8 @@ class Dualis(object):
             subject = soup.find('a', class_='link')['title']
             time_period = soup.find('span', class_='timePeriod')
             time_str = time_period.text.strip()[:13]
-            room = time_period.find('a', class_='arrow')
-            room = room = time_period.text.replace(time_str, '').strip() if room is None else room.text.strip()            
+            room_element = time_period.find('a', class_='arrow')
+            room = time_period.text.replace(time_str, '').strip() if room_element is None else room_element.text.strip()            
             start_time, end_time = [datetime.strptime(t.strip(), '%H:%M').time() for t in time_str.split('-')]
             appointment_list.append(Appointment(appointment_date, start_time, end_time, subject, room, None))
         return appointment_list
