@@ -149,12 +149,9 @@ class Dualis(object):
         Arguments:
             date -- date as a datetime.date object
         """
-        if date==None:
-            date = datetime.date.today()
-
-        date_str = date.strftime('%d/%m/%Y')
-        a = self.session.get(f"https://dualis.dhbw.de/scripts/mgrqispi.dll?APPNAME=CampusNet&PRGNAME=SCHEDULER&ARGUMENTS={self.arguments},-N000030,-A{date_str},-A,-N1,-N0,-N0")
-
+        if date is None: date = datetime.date.today()
+        a = self.session.get(f"https://dualis.dhbw.de/scripts/mgrqispi.dll?APPNAME=CampusNet&PRGNAME=SCHEDULER&ARGUMENTS={self.arguments},-N000030,-A{date.strftime('%d/%m/%Y')},-A,-N1,-N0,-N0")
+        
         if a.status_code != 200:
             raise Exception("Request failed")
 
@@ -162,22 +159,23 @@ class Dualis(object):
         
         soup = BeautifulSoup(a.text, 'html.parser')
         appointments = soup.find_all('td', class_='appointment')
-
         if not appointments:
             return []
-        
-        # save appointments to a html file
-        with open('appointments.html', 'w') as f:
-            f.write(str(appointments))
 
         appointment_list = []
         for appointment in appointments:
+            soup = BeautifulSoup(str(appointment), 'html.parser')
             appointment_date = appointment['abbr'].split(' ')[0]
-            print(appointment_date)
             if appointment_date not in WOCHENTAGE: continue
             appointment_date = date + timedelta(days=WOCHENTAGE.index(appointment_date) - date.weekday())
-            
-            appointment_list.append(Appointment(appointment_date, None, None, None, None, None))
+
+            subject = soup.find('a', class_='link')['title']
+            time_period = soup.find('span', class_='timePeriod')
+            time_str = time_period.text.strip()[:13]
+            room = time_period.find('a', class_='arrow')
+            room = room = time_period.text.replace(time_str, '').strip() if room is None else room.text.strip()            
+            start_time, end_time = [datetime.strptime(t.strip(), '%H:%M').time() for t in time_str.split('-')]
+            appointment_list.append(Appointment(appointment_date, start_time, end_time, subject, room, None))
         return appointment_list
 
     @DeprecationWarning
