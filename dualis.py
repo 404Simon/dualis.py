@@ -6,9 +6,16 @@ Usage: import dualis and initialize with dualis.Dualis()
 Author: pvhil
 """
 import re
+from datetime import datetime, timedelta
 
 import requests
 from bs4 import BeautifulSoup
+
+from models import Appointment
+
+
+
+WOCHENTAGE = ['Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag', 'Sonntag']
 
 class Dualis(object):
     """API Wrapper for the Dualis Website"""
@@ -137,38 +144,41 @@ class Dualis(object):
             data[len(data)] = temp
         return data
 
-    def getTimeTableWeek(self,date=None):
+    def getTimeTableWeek(self,date: datetime.date = None) -> list[Appointment]:
         """Get the timetable from a student
         Arguments:
-            date -- date as a string (DD/MM/YYYY)
+            date -- date as a datetime.date object
         """
         if date==None:
-            a = self.session.get(f"https://dualis.dhbw.de/scripts/mgrqispi.dll?APPNAME=CampusNet&PRGNAME=SCHEDULER&ARGUMENTS={self.arguments},-N000030,-A,-A,-N1")  
-        else:
-            a = self.session.get(f"https://dualis.dhbw.de/scripts/mgrqispi.dll?APPNAME=CampusNet&PRGNAME=SCHEDULER&ARGUMENTS={self.arguments},-N000030,-{date},-A,-N1,-N0,-N0")
+            date = datetime.date.today()
+
+        date_str = date.strftime('%d/%m/%Y')
+        a = self.session.get(f"https://dualis.dhbw.de/scripts/mgrqispi.dll?APPNAME=CampusNet&PRGNAME=SCHEDULER&ARGUMENTS={self.arguments},-N000030,-A{date_str},-A,-N1,-N0,-N0")
+
         if a.status_code != 200:
             raise Exception("Request failed")
 
-        # TODO parse the data more efficiently
-        # TODO Selection day,week,month
+        # TODO Selection day,week,month ?
         
         soup = BeautifulSoup(a.text, 'html.parser')
-        table = soup.find("div", {"id": "weekTableRoomplan"}).find("table",{ "class": "nb"})
-        data = {}
-        #tbody = table.find('tbody')
-        for tr in table.find_all('tr'):
-            # skip if tr has tbsubhead as class
-            if tr.get("class") == ["tbsubhead"]:
-                continue
-            if tr.find_all("td")[0].get("class") == ["tbcontrol"]:
-                continue
-            temp = {}
-            for th in tr.find_all('th'):                
-                temp[len(temp)] = re.sub(" +"," ",th.get_text().replace("\r", "").replace("\t", "").replace("\n", "").replace("\xa0"," "))
-            for td in tr.find_all('td'):
-                temp[len(temp)] = re.sub(" +"," ",td.get_text().replace("\r", "").replace("\t", "").replace("\n", "").replace("\xa0"," "))
-            data[len(data)] = temp
-        return data
+        appointments = soup.find_all('td', class_='appointment')
+
+        if not appointments:
+            return []
+        
+        # save appointments to a html file
+        with open('appointments.html', 'w') as f:
+            f.write(str(appointments))
+
+        appointment_list = []
+        for appointment in appointments:
+            appointment_date = appointment['abbr'].split(' ')[0]
+            print(appointment_date)
+            if appointment_date not in WOCHENTAGE: continue
+            appointment_date = date + timedelta(days=WOCHENTAGE.index(appointment_date) - date.weekday())
+            
+            appointment_list.append(Appointment(appointment_date, None, None, None, None, None))
+        return appointment_list
 
     @DeprecationWarning
     def getTimeTableMonth(self,date=None):
