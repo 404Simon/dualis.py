@@ -1,4 +1,5 @@
 __pycache__
-privattest.py
+.pytest_cache
+private_example.py
 .vscode
 *.html

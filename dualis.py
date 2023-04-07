@@ -144,7 +144,7 @@ class Dualis(object):
             data[len(data)] = temp
         return data
 
-    def getTimeTableWeek(self,date: datetime.date = None) -> list[Appointment]:
+    def getTimeTableWeek(self,date: datetime.date = None) -> list:
         """Get the timetable from a student
         Arguments:
             date -- date as a datetime.date object
