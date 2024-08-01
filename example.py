@@ -11,11 +11,10 @@ def parse_date(date: str) -> datetime.date:
 
 test = dualis.Dualis("email", "pass")
 
-print(test.getExamResults())
-print(test.getNewMessages())
-print(test.getPerformance())
-print(test.getTimeTableDay())
-print(test.getTimeTableWeek(parse_date('05.05.2055')))
-print(test.getTimeTableMonth())
-print(test.getTodayEvents())
-print(test.getExamResults())
+print(test.get_exam_results())
+print(test.get_new_messages())
+print(test.get_performance())
+print(test.get_time_table_day())
+print(test.get_time_table_week(parse_date('05.05.2055')))
+print(test.get_exam_results())
+
