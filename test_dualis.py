@@ -28,7 +28,7 @@ class DualisTest(unittest.TestCase):
         with patch('requests.Session.get') as mock_request:
             mock_request.return_value.status_code = 200
             mock_request.return_value.text = ""
-            self.dualis.getTimeTableWeek(date)
+            self.dualis.get_time_table_week(date)
 
         mock_request.assert_called_once_with(expected_url)
         
@@ -43,7 +43,7 @@ class DualisTest(unittest.TestCase):
         with patch('requests.Session.get') as mock_request:
             mock_request.return_value.status_code = 200
             mock_request.return_value.text = mock_response
-            timetable = self.dualis.getTimeTableWeek(parse_date('01.01.2011'))
+            timetable = self.dualis.get_time_table_week(parse_date('01.01.2011'))
             
             self.assertEqual(timetable, expected_data)
             mock_request.assert_called_once()
@@ -71,7 +71,7 @@ class DualisTest(unittest.TestCase):
         with patch('requests.Session.get') as mock_request:
             mock_request.return_value.status_code = 200
             mock_request.return_value.text = mock_response
-            timetable = self.dualis.getTimeTableWeek(parse_date('01.01.2011'))
+            timetable = self.dualis.get_time_table_week(parse_date('01.01.2011'))
             
             self.assertEqual(timetable, expected_data)
             mock_request.assert_called_once()
@@ -96,7 +96,7 @@ class DualisTest(unittest.TestCase):
         with patch('requests.Session.get') as mock_request:
             mock_request.return_value.status_code = 200
             mock_request.return_value.text = mock_response
-            timetable = self.dualis.getTimeTableWeek(parse_date('01.01.2011'))
+            timetable = self.dualis.get_time_table_week(parse_date('01.01.2011'))
             
             self.assertEqual(timetable, expected_data)
             mock_request.assert_called_once()
@@ -120,7 +120,7 @@ class DualisTest(unittest.TestCase):
             mock_request.return_value.status_code = 200
             mock_request.return_value.text = mock_response
             date = parse_date('08.08.1988')
-            timetable = self.dualis.getTimeTableWeek(date)
+            timetable = self.dualis.get_time_table_week(date)
             
             mock_request.assert_called_once()
             assert timetable == expected
@@ -132,5 +132,10 @@ class DualisTest(unittest.TestCase):
         with patch('requests.Session.get') as mock_request:
             mock_request.return_value.status_code = 404
             with self.assertRaises(Exception):
-                self.dualis.getTimeTableWeek(parse_date('01.01.2011'))
+                self.dualis.get_time_table_week(parse_date('01.01.2011'))
             mock_request.assert_called_once()
+
+
+if __name__ == '__main__':
+    unittest.main()
+

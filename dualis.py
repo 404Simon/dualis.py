@@ -1,10 +1,3 @@
-#!/usr/bin/env python # [1]
-"""\
-Dualis API Wrapper
-
-Usage: import dualis and initialize with dualis.Dualis()
-Author: pvhil
-"""
 import re
 from datetime import datetime, timedelta
 
@@ -17,40 +10,28 @@ from models import Appointment
 
 WOCHENTAGE = ['Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag', 'Sonntag']
 
-class Dualis(object):
-    """API Wrapper for the Dualis Website"""
-
+class Dualis:
     def __init__(self, username=None, password=None):
-        """Constructor
-        Arguments:
-            username -- username of the Dualis Account
-            password -- password of the Dualis Account
-        """
         self.session = requests.Session()
         if username and password:
             self.login(username, password)
 
 
     def login(self, username, password):
-        """Login to Dualis
-        Arguments:
-            username -- username of the Dualis Account
-            password -- password of the Dualis Account
-        """
         self.username = username
         self.password = password
 
-        loginRequest = self.session.post("https://dualis.dhbw.de/scripts/mgrqispi.dll", data=
+        r = self.session.post("https://dualis.dhbw.de/scripts/mgrqispi.dll", data=
             f"usrname={self.username}&pass={self.password}&APPNAME=CampusNet&PRGNAME=LOGINCHECK&ARGUMENTS=clino%2Cusrname%2Cpass%2Cmenuno%2Cmenu_type%2Cbrowser%2Cplatform&clino=000000000000001&menuno=000324&menu_type=classic&browser=&platform="
         )
-        if loginRequest.status_code != 200 or loginRequest.headers["REFRESH"].split("ARGUMENTS=")[1].split(",")[0] == "":
+        if r.status_code != 200 or r.headers["REFRESH"].split("ARGUMENTS=")[1].split(",")[0] == "":
             raise Exception("Login failed")
         else:
             print("Login successful")
 
-        self.arguments = loginRequest.headers["REFRESH"].split("ARGUMENTS=")[1].split(",")[0]
+        self.arguments = r.headers["REFRESH"].split("ARGUMENTS=")[1].split(",")[0]
 
-    def getTodayEvents(self):
+    def get_todays_events(self):
         """Get all events for today"""
         a = self.session.get("https://dualis.dhbw.de/scripts/mgrqispi.dll?APPNAME=CampusNet&PRGNAME=MLSSTART&ARGUMENTS="+self.arguments+",-N000019,-N000000000000000")
         if a.status_code != 200:
@@ -61,7 +42,7 @@ class Dualis(object):
         return table
         # I dont have an example for this, so I cant test it or parse it
 
-    def getNewMessages(self):
+    def get_new_messages(self):
         """Get all new messages"""
         a = self.session.get("https://dualis.dhbw.de/scripts/mgrqispi.dll?APPNAME=CampusNet&PRGNAME=MLSSTART&ARGUMENTS="+self.arguments+",-N000019,-N000000000000000")
         if a.status_code != 200:
@@ -72,7 +53,7 @@ class Dualis(object):
         return table
         # I dont have an example for this, so I cant test it or parse it
 
-    def getExamResults(self):
+    def get_exam_results(self):
         """Get all exam results"""
         a = self.session.get("https://dualis.dhbw.de/scripts/mgrqispi.dll?APPNAME=CampusNet&PRGNAME=COURSERESULTS&ARGUMENTS="+self.arguments+",-N000307,")
         if a.status_code != 200:
@@ -94,7 +75,7 @@ class Dualis(object):
         return data
 
 
-    def getPerformance(self): 
+    def get_performance(self): 
         """Get the performance from a student"""
         a = self.session.get(f"https://dualis.dhbw.de/scripts/mgrqispi.dll?APPNAME=CampusNet&PRGNAME=STUDENT_RESULT&ARGUMENTS={self.arguments},-N000310,-N0,-N000000000000000,-N000000000000000,-N000000000000000,-N0,-N000000000000000")
         if a.status_code != 200:
@@ -116,7 +97,7 @@ class Dualis(object):
         return data
 
 
-    def getTimeTableDay(self,date=None):
+    def get_time_table_day(self, date=None):
         """Get the timetable from a student
         Arguments:
             date -- date as a string (DD.MM.YYYY)
@@ -144,20 +125,20 @@ class Dualis(object):
             data[len(data)] = temp
         return data
 
-    def getTimeTableWeek(self,date: datetime.date = None) -> list:
+    def get_time_table_week(self, date: datetime.date = None) -> list:
         """Get the timetable from a student
         Arguments:
             date -- date as a datetime.date object
         """
         if date is None: date = datetime.date.today()
-        a = self.session.get(f"https://dualis.dhbw.de/scripts/mgrqispi.dll?APPNAME=CampusNet&PRGNAME=SCHEDULER&ARGUMENTS={self.arguments},-N000030,-A{date.strftime('%d/%m/%Y')},-A,-N1,-N0,-N0")
+        r = self.session.get(f"https://dualis.dhbw.de/scripts/mgrqispi.dll?APPNAME=CampusNet&PRGNAME=SCHEDULER&ARGUMENTS={self.arguments},-N000030,-A{date.strftime('%d/%m/%Y')},-A,-N1,-N0,-N0")
         
-        if a.status_code != 200:
+        if r.status_code != 200:
             raise Exception("Request failed")
 
         # TODO Selection day,week,month ?
         
-        soup = BeautifulSoup(a.text, 'html.parser')
+        soup = BeautifulSoup(r.text, 'html.parser')
         appointments = soup.find_all('td', class_='appointment')
         if not appointments:
             return []
@@ -177,41 +158,4 @@ class Dualis(object):
             start_time, end_time = [datetime.strptime(t.strip(), '%H:%M').time() for t in time_str.split('-')]
             appointment_list.append(Appointment(appointment_date, start_time, end_time, subject, room, None))
         return appointment_list
-
-    @DeprecationWarning
-    def getTimeTableMonth(self,date=None):
-        """Deprecated, parsing not tested, wont work"""
-
-        """Get the timetable from a student
-        Arguments:
-            date -- date as a string (DD/MM/YYYY)
-        """
-        if date==None:
-            a = self.session.get(f"https://dualis.dhbw.de/scripts/mgrqispi.dll?APPNAME=CampusNet&PRGNAME=SCHEDULER&ARGUMENTS={self.arguments},-N000030,-A,-A,-N1")  
-        else:
-            a = self.session.get(f"https://dualis.dhbw.de/scripts/mgrqispi.dll?APPNAME=CampusNet&PRGNAME=SCHEDULER&ARGUMENTS={self.arguments},-N000030,-{date},-A,-N1,-N0,-N0")
-        if a.status_code != 200:
-            raise Exception("Request failed")
-
-        # TODO parse the data more efficiently
-        # TODO No Example for testing, parsing will not work. Need help
-        
-        soup = BeautifulSoup(a.text, 'html.parser')
-        table = soup.find("div", {"id": "tb tbMonthContainer"}).find("table",{ "class": "nb"})
-        data = {}
-        #tbody = table.find('tbody')
-        for tr in table.find_all('tr'):
-            # skip if tr has tbsubhead as class
-            if tr.get("class") == ["tbsubhead"]:
-                continue
-            if tr.find_all("td")[0].get("class") == ["tbcontrol"]:
-                continue
-            temp = {}
-            for th in tr.find_all('th'):                
-                temp[len(temp)] = re.sub(" +"," ",th.get_text().replace("\r", "").replace("\t", "").replace("\n", "").replace("\xa0"," "))
-            for td in tr.find_all('td'):
-                temp[len(temp)] = re.sub(" +"," ",td.get_text().replace("\r", "").replace("\t", "").replace("\n", "").replace("\xa0"," "))
-            data[len(data)] = temp
-
-        return data
 

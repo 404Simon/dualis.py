@@ -1,6 +1,7 @@
 # Unofficial Dualis Python API Wrapper
 
 A Third-Party Python API Wrapper for [https://dualis.dhbw.de/](https://dualis.dhbw.de/)
+This is a fork of the original but deleted project by [pvhil](https://github.com/pvhil).
 
 ## Usage
 
@@ -15,22 +16,9 @@ test = dualis.Dualis("email", "pass")
 
 test = dualis.Dualis()
 test.login("email","pass")
-
-# get parsed information
-
-print(test.getExamResults())
-print(test.getNewMessages())
-print(test.getPerformance())
-print(test.getTimeTable())
-print(test.getTodayEvents())
-print(test.getExamResults())
-...
 ```
+ Methods should be self-explanatory.
 
-## Why do I need it?
-
-If you want to create an application like a mobile app, chatbot, website or something else in python, you can use this module to easily receive parsed information (like your timetable) to implement it in your application.  
-This module is great if you want to start programming with python and want to learn about APIs.
 
 ## Intentions
 
@@ -45,18 +33,12 @@ I am not responsible for any harm caused with this project. Please use this API 
 
 ## Todo
 
-- Implement more Endpoints
-- Better, more precise Parsing
-- Make Return values more readable
-- Documentation
-
-Please Contribute if you can.  
-When project is finished, a pip package will be created
+Only the `get_time_table_week` method is really usable at the moment.
+Thats what i wrote and thats the only one with tests too.
 
 ## Contributing
 
-I can not parse information from the website completely, because i do not have full access to timetables and other information.  
-If you have a completed timetable with many appointments, please contribute to this project to make the parsing more precise.
+Do it!
 
 ## Disclaimer
 
